@@ -51,3 +51,8 @@ class IFClient(object):
         else:
             print(f"{self.device_addr} [REQUEST SENT SUCCESSFULLY to {self.device_ip} : {self.device_port}] Request sent to Infinite Flight successfully")
         return None
+
+
+if __name__ == '__main__':
+    ifc = InfiniteFlightConnect.IFClient()
+    print(ifc.send_command("Airplane.GetState", [], await_response=True))
