@@ -4,10 +4,11 @@ import socket
 import json
 import logging
 
-LOG_FORMAT = "%(asctime)s - %(levelname)s - %(message)s"
-DATE_FORMAT = "%m/%d/%Y %H:%M:%S %p"
-
-logging.basicConfig(level=logging.DEBUG,format=LOG_FORMAT, datefmt=DATE_FORMAT)
+logger = logging.getLogger()
+ch = logging.StreamHandler()
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+ch.setFormatter(formatter)
+logger.addHandler(ch)
 
 class IFClient(object):
     def __init__(self) -> None:
@@ -16,8 +17,8 @@ class IFClient(object):
         while True:
             (data, addr) = udp.recvfrom(4096)
             if data:
-                logging.info('Got broadcast udp packet, from: {}'.format(addr[0]))
-                logging.debug('Content:\n{}'.format(json.dumps(json.loads(data.decode('utf-8')), indent=4)))
+                logger.warn('Got broadcast udp packet, from: {}'.format(addr[0]))
+                logger.debug('Content:\n{}'.format(json.dumps(json.loads(data.decode('utf-8')), indent=4)))
                 break
         udp.close()
 
@@ -27,6 +28,7 @@ class IFClient(object):
 
         self.conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.conn.connect(self.device_addr)
+
 
     def send_command(self, cmd, params, await_response=False):
         request = {"Command":cmd,"Parameters":params}
@@ -54,5 +56,5 @@ class IFClient(object):
 
 
 if __name__ == '__main__':
-    ifc = InfiniteFlightConnect.IFClient()
+    ifc = IFClient()
     print(ifc.send_command("Airplane.GetState", [], await_response=True))
