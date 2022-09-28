@@ -6,9 +6,12 @@ import logging
 
 logger = logging.getLogger()
 ch = logging.StreamHandler()
+fh = logging.FileHandler('detail.log', mode='a')
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 ch.setFormatter(formatter)
 logger.addHandler(ch)
+logger.addHandler(fh)
+logger.setLevel(logging.ERROR)
 
 class IFClient(object):
     def __init__(self) -> None:
@@ -23,7 +26,7 @@ class IFClient(object):
         udp.close()
 
         self.device_ip = addr[0]
-        self.device_port = 10111
+        self.device_port = 10112
         self.device_addr = (self.device_ip, self.device_port)
 
         self.conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -53,8 +56,65 @@ class IFClient(object):
         else:
             print(f"{self.device_addr} [REQUEST SENT SUCCESSFULLY to {self.device_ip} : {self.device_port}] Request sent to Infinite Flight successfully")
         return None
+    
+    def get_manifest(self):
+        request = struct.pack('<lx', -1)
+        self.conn.sendall(request)
+        item = self.conn.recv(4)
+        length = self.conn.recv(4)
+        #(item, length) = struct.unpack('<ll', header)
+        length = struct.unpack('<l', length)[0]
+        logger.info('item: {}, length: {}'.format(item, length))
+        
+        recvd = 0
+        response = bytes()
+        while recvd < length:
+            response += self.conn.recv(length - recvd)
+            recvd = len(response)
+
+     
+        response = response[4:].decode('utf-8')
+        entries = response.split('\n')
+        logger.debug('{}'.format(response))
+
+        #logger.debug('{}'.format(entries))
+    
+    def get_state(self, id):
+        request = struct.pack('<lx', id)
+        logger.debug('{}'.format(request))
+        self.conn.sendall(request)
+        response = self.conn.recv(4)
+        logger.debug('{}'.format(response))
+        return_id = struct.unpack('<l', response)[0]
+        response = self.conn.recv(4)
+        return_length = struct.unpack('<l', response)[0]
+        recved = 0
+        response = bytes()
+        while recved < return_length:
+            response += self.conn.recv(return_length - recved)
+            recved = len(response)
+        
+        pay_load = response[4:]
+        lat = struct.unpack('<f', pay_load)[0]
+        logger.debug('{}'.format(lat))
+
+        return lat
+
+
+    
+    def close(self):
+        self.conn.close()
+
 
 
 if __name__ == '__main__':
     ifc = IFClient()
-    print(ifc.send_command("Airplane.GetState", [], await_response=True))
+    ifc.get_manifest()
+    for i in range(500):
+        lat = ifc.get_state(628)
+        print('current lat: {}'.format(lat))
+        time.sleep(10)
+
+    ifc.close()
+
+    #print(ifc.send_command("Airplane.GetState", [], await_response=True))

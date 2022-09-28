@@ -1,8 +1,8 @@
 import InfiniteFlightConnect
 import logging
 
-#logger = logging.getLogger()
-#logger.setLevel(logging.DEBUG)
+logger = logging.getLogger()
+logger.setLevel(logging.DEBUG)
 
 
 ifc = InfiniteFlightConnect.IFClient()
