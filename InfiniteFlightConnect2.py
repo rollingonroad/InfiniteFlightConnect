@@ -113,6 +113,13 @@ class IFClient(object):
         else:
             return 'No such manifest item: {}'.format(name)
 
+    def set_state(self, id, data_type, value):
+        pass
+
+    def set_state_with_check(self, id, data_type, value):
+        pass
+
+
     def get_aircraft_state(self):
         state = {}
         
