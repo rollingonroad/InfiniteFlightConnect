@@ -149,9 +149,22 @@ class IFClient(object):
         else:
             pass
 
-
-    def set_state_with_check(self, id, data_type, value):
-        pass
+    def run_command(self, id):
+        request = bytes()
+        request = pack(id, 1) + pack(False, 0)
+        logger.debug('request: {}'.format(request))
+        self.conn.sendall(request)
+    
+    def run_command_by_name(self, name):
+        if name in self.manifest.keys():
+            id = self.manifest[name]['id']
+            data_type = self.manifest[name]['data_type']
+            if data_type != -1:
+                return "It's state, you should use set_state_by_name() and provide a value."
+            logger.debug('id: {}, data_type: {}'.format(id, data_type))
+            return self.run_command(id)
+        else:
+            pass
 
 
     def get_aircraft_state(self):
@@ -189,5 +202,6 @@ if __name__ == '__main__':
     time.sleep(3)
     print(ifc.get_state_by_name('aircraft/0/systems/flaps/state'))
     #print(ifc.get_filghtplan())
+    ifc.run_command_by_name('commands/NextCamera')
 
     ifc.close()
