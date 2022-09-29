@@ -155,18 +155,19 @@ class IFClient(object):
 
         return state
 
+    def get_filghtplan(self):
+        name = 'aircraft/0/flightplan/full_info'
+        return self.get_state_by_name(name)
+
 
     # close the socket
     def close(self):
         self.conn.close()
 
-
-
 if __name__ == '__main__':
     ifc = IFClient()
-    ifc.dump_manifest()
-    ifc.fill_manifest()
-    ifc.dump_manifest()
+    print(ifc.get_filghtplan())
+ 
         
     ifc.close()
 
