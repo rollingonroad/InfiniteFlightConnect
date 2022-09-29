@@ -85,6 +85,26 @@ class IFClient(object):
             self.manifest[id_name] = {}
             self.manifest[id_name]['id'] = int(id)
             self.manifest[id_name]['data_type'] = int(data_type)
+    
+    def fill_manifest(self):
+        for name in self.manifest.keys():
+            if self.manifest[name]['data_type'] != -1:
+                id = self.manifest[name]['id']
+                data_type = self.manifest[name]['data_type']
+                value = self.get_state(id, data_type)
+                self.manifest[name]['value'] = value
+                self.manifest[name]['last_update'] = time.time()
+
+    def dump_manifest(self):
+        for name in self.manifest.keys():
+            id = self.manifest[name]['id']
+            data_type = self.manifest[name]['data_type']
+            if 'value' in self.manifest[name].keys() and id < 10000:
+                value = self.manifest[name]['value']
+                last_update = time.ctime(self.manifest[name]['last_update'])
+                print('{:<8}{:<3}{:<25}{}'.format(id, data_type, value, name))
+            else:
+                print('{:<8}{:<3}{:<55}'.format(id, data_type, name))
 
     
     def get_state(self, id, data_type):
@@ -144,7 +164,9 @@ class IFClient(object):
 
 if __name__ == '__main__':
     ifc = IFClient()
-    print(ifc.get_aircraft_state())
+    ifc.dump_manifest()
+    ifc.fill_manifest()
+    ifc.dump_manifest()
         
     ifc.close()
 
