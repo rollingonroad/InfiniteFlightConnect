@@ -35,6 +35,8 @@ class IFClient(object):
         self.conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.conn.connect(self.device_addr)
 
+        self.get_manifest()
+
 
     def send_command(self, cmd, params, await_response=False):
         request = {"Command":cmd,"Parameters":params}
@@ -65,7 +67,6 @@ class IFClient(object):
         self.conn.sendall(request)
         item = self.conn.recv(4)
         length = self.conn.recv(4)
-        #(item, length) = struct.unpack('<ll', header)
         length = struct.unpack('<l', length)[0]
         logger.info('item: {}, length: {}'.format(item, length))
         
@@ -77,29 +78,60 @@ class IFClient(object):
 
      
         response = response[4:].decode('utf-8')
-        entries = response.split('\n')
         logger.debug('{}'.format(response))
+        
+        entries = response.split('\n')
+        self.manifest = {}
+        for line in entries[:-1]:
+            (id, data_type, id_name) = line.split(',')
+            self.manifest[id_name] = {}
+            self.manifest[id_name]['id'] = int(id)
+            self.manifest[id_name]['data_type'] = int(data_type)
 
-        #logger.debug('{}'.format(entries))
     
     def get_state(self, id, data_type):
+
         request = struct.pack('<lx', id)
         self.conn.sendall(request)
+
         response = recieve(self.conn, 4)
         return_id = unpack(response, data_type=1)
         response = recieve(self.conn, 4)
         return_length = unpack(response, data_type=1)
-        logging.debug('return: id: {}, length: {}'.format(return_id, return_length))
+        logger.debug('return: id: {}, length: {}'.format(return_id, return_length))
+
         pay_load = recieve(self.conn, return_length)
-
         return_value = unpack(pay_load, data_type)
-
         logger.debug('{}'.format(return_value))
 
         return return_value
 
 
-    
+    def get_state_by_name(self, name):
+        if name in self.manifest.keys():
+            return self.get_state(self.manifest[name]['id'], self.manifest[name]['data_type'])
+        else:
+            return 'No such manifest item: {}'.format(name)
+
+    def get_aircraft_state(self):
+        state = {}
+        
+        state['Name'] = self.get_state_by_name('aircraft/0/name')
+        state['AltitudeAGL'] = self.get_state_by_name('aircraft/0/altitude_agl')
+        state['AltitudeMSL'] = self.get_state_by_name('aircraft/0/altitude_msl')
+        state['GroundSpeed'] = self.get_state_by_name('aircraft/0/groundspeed')
+        state['HeadingMagnetic'] = self.get_state_by_name('aircraft/0/heading_magnetic')
+        state['HeadingTrue'] = self.get_state_by_name('aircraft/0/heading_true')
+        state['VerticalSpeed'] = self.get_state_by_name('aircraft/0/vertical_speed')
+        state['Location'] = {}
+        state['Location']['Altitude'] = self.get_state_by_name('aircraft/0/altitude_msl')
+        state['Location']['Latitude'] = self.get_state_by_name('aircraft/0/latitude')
+        state['Location']['Longitude'] = self.get_state_by_name('aircraft/0/longitude')
+
+        return state
+
+
+    # close the socket
     def close(self):
         self.conn.close()
 
@@ -107,18 +139,8 @@ class IFClient(object):
 
 if __name__ == '__main__':
     ifc = IFClient()
-    #ifc.get_manifest()
-    for i in range(500):
-        lat = ifc.get_state(624, 3)
-        lng = ifc.get_state(625, 3)
-        isbooted = ifc.get_state(944, 0)
-        livery = ifc.get_state(538, 4)
-        oiltemp = ifc.get_state(368, 2)
-
-
-        print('{}: isbooted: {}, current lat: {}, {}, oil temp: {}'.format(livery, isbooted, lat, lng, oiltemp))
-        time.sleep(10)
-
+    print(ifc.get_aircraft_state())
+        
     ifc.close()
 
     #print(ifc.send_command("Airplane.GetState", [], await_response=True))
