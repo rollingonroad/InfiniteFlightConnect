@@ -157,8 +157,8 @@ class IFClient(object):
 
     def get_filghtplan(self):
         name = 'aircraft/0/flightplan/full_info'
-        return self.get_state_by_name(name)
-
+        flightplan = self.get_state_by_name(name).decode('utf-8')
+        return json.loads(flightplan)
 
     # close the socket
     def close(self):
