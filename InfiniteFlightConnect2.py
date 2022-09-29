@@ -1,5 +1,3 @@
-from importlib.util import spec_from_file_location
-from os import uname
 import time
 import struct
 import socket
@@ -77,12 +75,12 @@ class IFClient(object):
             recvd = len(response)
 
      
-        response = response[4:].decode('utf-8')
+        response = response[4:].decode('utf-8').strip()
         logger.debug('{}'.format(response))
         
         entries = response.split('\n')
         self.manifest = {}
-        for line in entries[:-1]:
+        for line in entries:
             (id, data_type, id_name) = line.split(',')
             self.manifest[id_name] = {}
             self.manifest[id_name]['id'] = int(id)
