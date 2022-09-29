@@ -3,7 +3,7 @@ import struct
 import socket
 import json
 import logging
-from util import recieve, unpack, rad_to_ang, mps_to_kph, mps_to_fpm
+from util import recieve, unpack, rad_to_ang, mps_to_kph, mps_to_fpm, pack
 
 logger = logging.getLogger()
 ch = logging.StreamHandler()
@@ -132,7 +132,23 @@ class IFClient(object):
             return 'No such manifest item: {}'.format(name)
 
     def set_state(self, id, data_type, value):
-        pass
+        request = bytes()
+        if data_type in [0, 1, 2, 3, 4, 5]:
+            request = pack(id, 1) + pack(True, 0) + pack(value, data_type)
+        else:
+            pass
+        logger.debug('request: {}'.format(request))
+        self.conn.sendall(request)
+        
+    def set_state_by_name(self, name, value):
+        if name in self.manifest.keys():
+            id = self.manifest[name]['id']
+            data_type = self.manifest[name]['data_type']
+            logger.debug('id: {}, data_type: {}, value: {}'.format(id, data_type, value))
+            return self.set_state(id, data_type, value)
+        else:
+            pass
+
 
     def set_state_with_check(self, id, data_type, value):
         pass
@@ -168,6 +184,10 @@ class IFClient(object):
 if __name__ == '__main__':
     ifc = IFClient()
     print(ifc.get_aircraft_state())
+    print(ifc.get_state_by_name('aircraft/0/systems/flaps/state'))
+    ifc.set_state_by_name('aircraft/0/systems/flaps/state', 2)
+    time.sleep(3)
+    print(ifc.get_state_by_name('aircraft/0/systems/flaps/state'))
     #print(ifc.get_filghtplan())
 
     ifc.close()
