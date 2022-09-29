@@ -24,6 +24,7 @@ def unpack(payload, data_type):
         # todo: raise exception
         pass
 
+# convert specific DataType to byte array, raise exception if value type mismatch with DataType
 def pack(value, data_type):
     if data_type == 0 and isinstance(value, bool):
         return struct.pack('?', value)

@@ -3,7 +3,7 @@ import struct
 import socket
 import json
 import logging
-from util import recieve, unpack, rad_to_ang, mps_to_kph, mps_to_fpm, pack
+from utils import recieve, unpack, rad_to_ang, mps_to_kph, mps_to_fpm, pack
 
 logger = logging.getLogger()
 ch = logging.StreamHandler()
@@ -34,6 +34,10 @@ class IFClient(object):
         self.conn.connect(self.device_addr)
 
         self.get_manifest()
+
+        # close the client
+    def close(self):
+        self.conn.close()
 
 
     def send_command(self, cmd, params, await_response=False):
@@ -190,9 +194,6 @@ class IFClient(object):
         flightplan = self.get_state_by_name(name)
         return json.loads(flightplan)
 
-    # close the socket
-    def close(self):
-        self.conn.close()
 
 if __name__ == '__main__':
     ifc = IFClient()
