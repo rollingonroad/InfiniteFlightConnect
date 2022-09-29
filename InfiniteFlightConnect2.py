@@ -3,7 +3,7 @@ import struct
 import socket
 import json
 import logging
-from util import recieve, unpack
+from util import recieve, unpack, rad_to_ang, mps_to_kph, mps_to_fpm
 
 logger = logging.getLogger()
 ch = logging.StreamHandler()
@@ -119,10 +119,10 @@ class IFClient(object):
         logger.debug('return: id: {}, length: {}'.format(return_id, return_length))
 
         pay_load = recieve(self.conn, return_length)
-        return_value = unpack(pay_load, data_type)
-        logger.debug('{}'.format(return_value))
+        value = unpack(pay_load, data_type)
+        logger.debug('{}'.format(value))
 
-        return return_value
+        return value
 
 
     def get_state_by_name(self, name):
@@ -145,9 +145,10 @@ class IFClient(object):
         state['AltitudeAGL'] = self.get_state_by_name('aircraft/0/altitude_agl')
         state['AltitudeMSL'] = self.get_state_by_name('aircraft/0/altitude_msl')
         state['GroundSpeed'] = self.get_state_by_name('aircraft/0/groundspeed')
-        state['HeadingMagnetic'] = self.get_state_by_name('aircraft/0/heading_magnetic')
-        state['HeadingTrue'] = self.get_state_by_name('aircraft/0/heading_true')
-        state['VerticalSpeed'] = self.get_state_by_name('aircraft/0/vertical_speed')
+        state['GroundSpeedKts'] = mps_to_kph(state['GroundSpeed'])
+        state['HeadingMagnetic'] = rad_to_ang(self.get_state_by_name('aircraft/0/heading_magnetic'))
+        state['HeadingTrue'] = rad_to_ang(self.get_state_by_name('aircraft/0/heading_true'))
+        state['VerticalSpeed'] = mps_to_fpm(self.get_state_by_name('aircraft/0/vertical_speed'))
         state['Location'] = {}
         state['Location']['Altitude'] = self.get_state_by_name('aircraft/0/altitude_msl')
         state['Location']['Latitude'] = self.get_state_by_name('aircraft/0/latitude')
@@ -157,7 +158,7 @@ class IFClient(object):
 
     def get_filghtplan(self):
         name = 'aircraft/0/flightplan/full_info'
-        flightplan = self.get_state_by_name(name).decode('utf-8')
+        flightplan = self.get_state_by_name(name)
         return json.loads(flightplan)
 
     # close the socket
@@ -166,9 +167,7 @@ class IFClient(object):
 
 if __name__ == '__main__':
     ifc = IFClient()
-    print(ifc.get_filghtplan())
- 
-        
-    ifc.close()
+    print(ifc.get_aircraft_state())
+    #print(ifc.get_filghtplan())
 
-    #print(ifc.send_command("Airplane.GetState", [], await_response=True))
+    ifc.close()
