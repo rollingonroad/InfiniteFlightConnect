@@ -1,5 +1,8 @@
 from inspect import istraceback
 import struct
+import math
+
+from pkg_resources import to_filename
 # convert byte array to specific DataType, raise exception if payload length mismatch with DataType
 def unpack(payload, data_type):
     payload_length = len(payload)
@@ -20,8 +23,6 @@ def unpack(payload, data_type):
     else:
         # todo: raise exception
         pass
-
-    return return_value
 
 def pack(value, data_type):
     if data_type == 0 and isinstance(value, bool):
@@ -48,3 +49,17 @@ def recieve(conn, size):
         buf += conn.recv(size - recved)
         recved = len(buf)
     return buf
+
+# convert rad to ang
+def rad_to_ang(rad):
+    return rad * 180 / math.pi
+
+# convert speed m/s to knot/h
+def mps_to_kph(mps):
+    return mps * 3.6 * 0.539956803
+
+# convert vertical speed, m/s to feet/min
+def mps_to_fpm(mps):
+    return mps * 60 * 3.2808399
+
+
