@@ -7,11 +7,11 @@ from utils import recieve, unpack, rad_to_ang, mps_to_kph, mps_to_fpm, pack
 
 logger = logging.getLogger()
 ch = logging.StreamHandler()
-fh = logging.FileHandler('detail.log', mode='a')
+#fh = logging.FileHandler('detail.log', mode='a')
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 ch.setFormatter(formatter)
 logger.addHandler(ch)
-logger.addHandler(fh)
+#logger.addHandler(fh)
 logger.setLevel(logging.DEBUG)
 
 class IFClient(object):
@@ -197,12 +197,16 @@ class IFClient(object):
 
 if __name__ == '__main__':
     ifc = IFClient()
+
     print(ifc.get_aircraft_state())
+
     print(ifc.get_state_by_name('aircraft/0/systems/flaps/state'))
     ifc.set_state_by_name('aircraft/0/systems/flaps/state', 2)
     time.sleep(3)
     print(ifc.get_state_by_name('aircraft/0/systems/flaps/state'))
-    #print(ifc.get_filghtplan())
+
     ifc.run_command_by_name('commands/NextCamera')
+
+    print(ifc.get_filghtplan())
 
     ifc.close()

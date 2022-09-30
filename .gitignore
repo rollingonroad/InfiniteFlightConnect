@@ -1,2 +1,5 @@
 ifcclient_pkg/detail.log
-
+build/
+dist/
+ifcclient.egg-info/
+ifcclient_pkg/detail.log
