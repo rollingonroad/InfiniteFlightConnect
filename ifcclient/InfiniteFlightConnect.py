@@ -3,7 +3,7 @@ import struct
 import socket
 import json
 import logging
-from utils import recieve, unpack, rad_to_ang, mps_to_kph, mps_to_fpm, pack
+from ifcclient.utils import recieve, unpack, rad_to_ang, mps_to_kph, mps_to_fpm, pack
 
 logger = logging.getLogger()
 ch = logging.StreamHandler()
@@ -14,7 +14,7 @@ logger.addHandler(ch)
 #logger.addHandler(fh)
 logger.setLevel(logging.DEBUG)
 
-class IFClient(object):
+class IFCClient(object):
     def __init__(self) -> None:
         udp = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         udp.bind(("", 15000))
@@ -196,7 +196,7 @@ class IFClient(object):
 
 
 if __name__ == '__main__':
-    ifc = IFClient()
+    ifc = IFCClient()
 
     print(ifc.get_aircraft_state())
 

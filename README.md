@@ -16,24 +16,24 @@ First, import the module in Python and init the object.
 ```py
 import ifcclient
 
-ifc = IFClient()
+ifc = ifcclient.IFClient()
 ```
 
 There are three ways to use the Infinite Flight Connected API V2, GetState, SetState, RunCommand. 
 
 ###GetState
 ```py
-get_state_by_name(name)
+ifc.get_state_by_name(name)
 ```
 
 ###SetState
 ```py
-set_state_by_name(name, value)
+ifc.set_state_by_name(name, value)
 ```
 
 ###RunCommand
 ```py
-run_command_by_name(command)
+ifc.run_command_by_name(command)
 ```
 
 ## Future updates
