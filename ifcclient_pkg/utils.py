@@ -61,5 +61,3 @@ def mps_to_kph(mps):
 # convert vertical speed, m/s to feet/min
 def mps_to_fpm(mps):
     return mps * 60 * 3.2808399
-
-
