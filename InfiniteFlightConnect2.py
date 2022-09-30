@@ -159,10 +159,10 @@ class IFClient(object):
         logger.debug('request: {}'.format(request))
         self.conn.sendall(request)
     
-    def run_command_by_name(self, name):
-        if name in self.manifest.keys():
-            id = self.manifest[name]['id']
-            data_type = self.manifest[name]['data_type']
+    def run_command_by_name(self, command):
+        if command in self.manifest.keys():
+            id = self.manifest[command]['id']
+            data_type = self.manifest[command]['data_type']
             if data_type != -1:
                 return "It's state, you should use set_state_by_name() and provide a value."
             logger.debug('id: {}, data_type: {}'.format(id, data_type))
