@@ -7,12 +7,14 @@ from ifcclient.utils import recieve, unpack, rad_to_ang, mps_to_kph, mps_to_fpm,
 
 logger = logging.getLogger()
 ch = logging.StreamHandler()
-#fh = logging.FileHandler('detail.log', mode='a')
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 ch.setFormatter(formatter)
 logger.addHandler(ch)
+logger.setLevel(logging.WARN)
+
+#fh = logging.FileHandler('detail.log', mode='a')
 #logger.addHandler(fh)
-logger.setLevel(logging.DEBUG)
+#logger.setLevel(logging.DEBUG)
 
 class IFCClient(object):
     def __init__(self) -> None:
