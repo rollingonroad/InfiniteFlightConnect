@@ -79,6 +79,8 @@ class IFCClient(object):
 
 
     def send_command(self, cmd, params, await_response=False):
+        if self.version != 1:
+            raise AttributeError('Only work on version 1.')
         request = {"Command":cmd,"Parameters":params}
         request = json.dumps(request).encode("utf-8")
         request = struct.pack('<Hxx', len(request)) + request
@@ -101,6 +103,8 @@ class IFCClient(object):
         return None
     
     def get_manifest(self):
+        if self.version != 2:
+            raise AttributeError('Only work on version 2.')
         request = struct.pack('<lx', -1)
         self.conn.sendall(request)
         item = self.conn.recv(4)
@@ -127,6 +131,8 @@ class IFCClient(object):
             self.manifest[id_name]['data_type'] = int(data_type)
     
     def get_listcommands(self):
+        if self.version != 1:
+            raise AttributeError('Only work on version 1.')
         response = self.send_command('listcommands', params=[], await_response=True)
         parsed = json.loads(response)
         self.commandlist = {}
@@ -137,6 +143,8 @@ class IFCClient(object):
     
     
     def fill_manifest(self):
+        if self.version != 2:
+            raise AttributeError('Only work on version 2.')
         for name in self.manifest.keys():
             if self.manifest[name]['data_type'] != -1:
                 id = self.manifest[name]['id']
@@ -146,6 +154,8 @@ class IFCClient(object):
                 self.manifest[name]['last_update'] = time.time()
 
     def dump_manifest(self):
+        if self.version != 2:
+            raise AttributeError('Only work on version 2.')
         for name in self.manifest.keys():
             id = self.manifest[name]['id']
             data_type = self.manifest[name]['data_type']
@@ -158,6 +168,8 @@ class IFCClient(object):
 
     
     def get_state(self, id, data_type):
+        if self.version != 2:
+            raise AttributeError('Only work on version 2.')
 
         request = struct.pack('<lx', id)
         self.conn.sendall(request)
@@ -176,12 +188,16 @@ class IFCClient(object):
 
 
     def get_state_by_name(self, name):
+        if self.version != 2:
+            raise AttributeError('Only work on version 2.')
         if name in self.manifest.keys():
             return self.get_state(self.manifest[name]['id'], self.manifest[name]['data_type'])
         else:
-            return 'No such manifest item: {}'.format(name)
+            raise AttributeError("State name can't be found in manifest.")
 
     def set_state(self, id, data_type, value):
+        if self.version != 2:
+            raise AttributeError('Only work on version 2.')
         request = bytes()
         if data_type in [0, 1, 2, 3, 4, 5]:
             request = pack(id, 1) + pack(True, 0) + pack(value, data_type)
@@ -191,21 +207,27 @@ class IFCClient(object):
         self.conn.sendall(request)
         
     def set_state_by_name(self, name, value):
+        if self.version != 2:
+            raise AttributeError('Only work on version 2.')
         if name in self.manifest.keys():
             id = self.manifest[name]['id']
             data_type = self.manifest[name]['data_type']
             logger.debug('id: {}, data_type: {}, value: {}'.format(id, data_type, value))
             return self.set_state(id, data_type, value)
         else:
-            pass
+            raise AttributeError("State name can't be found in manifest.")
 
     def run_command(self, id):
+        if self.version != 2:
+            raise AttributeError('Only work on version 2.')
         request = bytes()
         request = pack(id, 1) + pack(False, 0)
         logger.debug('request: {}'.format(request))
         self.conn.sendall(request)
     
     def run_command_by_name(self, command):
+        if self.version != 2:
+            raise AttributeError('Only work on version 2.')
         if command in self.manifest.keys():
             id = self.manifest[command]['id']
             data_type = self.manifest[command]['data_type']
@@ -214,7 +236,7 @@ class IFCClient(object):
             logger.debug('id: {}, data_type: {}'.format(id, data_type))
             return self.run_command(id)
         else:
-            pass
+            raise AttributeError("command can't be found in manifest.")
 
 
     def get_aircraft_state(self):
@@ -245,7 +267,7 @@ class IFCClient(object):
             flightplan = self.send_command("flightplan.get", [], await_response=True)
         return json.loads(flightplan)
 
-    def dsiplay_command(self):
+    def dsiplay_commands(self):
         if self.version == 1:
             print('{:<40}: {:<40}'.format('Command', 'Description'))
             for key in self.commandlist.keys():
@@ -278,7 +300,7 @@ if __name__ == '__main__':
     ifc.run_command_by_name('commands/NextCamera')
 
     print(ifc.get_filghtplan())
-    ifc.dsiplay_command()
+    ifc.dsiplay_commands()
 
     ifc.close()
 
@@ -290,6 +312,6 @@ if __name__ == '__main__':
     print(ifc.get_filghtplan())
 
     ifc.get_listcommands()
-    ifc.dsiplay_command()
+    ifc.dsiplay_commands()
 
     ifc.close()

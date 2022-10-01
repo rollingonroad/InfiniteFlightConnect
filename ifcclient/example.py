@@ -7,8 +7,10 @@ logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
 
 if __name__ == '__main__':
-    ip_list = IFCClient.discover_devices(duration=15)
-    ifc = IFCClient(ip_list[0])
+    # test version 2
+    ips = IFCClient.discover_devices(duration=0)
+    print(ips)
+    ifc = IFCClient(ips[0], version=2)
 
     print(ifc.get_aircraft_state())
 
@@ -20,5 +22,6 @@ if __name__ == '__main__':
     ifc.run_command_by_name('commands/NextCamera')
 
     print(ifc.get_filghtplan())
+    ifc.dsiplay_commands()
 
     ifc.close()
