@@ -20,8 +20,7 @@ def unpack(payload, data_type):
     if data_type == 5 and payload_length == 8:
         return struct.unpack('<q', payload)[0]
     else:
-        # todo: raise exception
-        pass
+        raise TypeError('the length is not fit the data type')
 
 # convert specific DataType to byte array, raise exception if value type mismatch with DataType
 def pack(value, data_type):
@@ -38,8 +37,7 @@ def pack(value, data_type):
     if data_type == 5 and isinstance(value, int):
         return struct.pack('<q', value)
     else:
-        # todo: raise exception
-        pass
+        raise TypeError('value is not match with data type')
 
 # recieve specific size from the socket
 def recieve(conn, size):

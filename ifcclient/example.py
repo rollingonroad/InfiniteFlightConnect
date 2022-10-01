@@ -1,12 +1,16 @@
-import ifcclient
 import logging
 import time
+
+from InfiniteFlightConnect import IFCClient
 
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
 
 if __name__ == '__main__':
-    ifc = ifcclient.IFCClient()
+    # test version 2
+    ips = IFCClient.discover_devices(duration=0)
+    print(ips)
+    ifc = IFCClient(ips[0], version=2)
 
     print(ifc.get_aircraft_state())
 
@@ -18,5 +22,6 @@ if __name__ == '__main__':
     ifc.run_command_by_name('commands/NextCamera')
 
     print(ifc.get_filghtplan())
+    ifc.dsiplay_commands()
 
     ifc.close()

@@ -3,3 +3,4 @@ build/
 dist/
 ifcclient.egg-info/
 ifcclient_pkg/detail.log
+.DS_Store
