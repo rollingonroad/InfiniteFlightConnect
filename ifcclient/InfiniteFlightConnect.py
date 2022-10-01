@@ -1,9 +1,12 @@
 from os import stat
+from pydoc import describe
 import time
 import struct
 import socket
 import json
 import logging
+
+from pytz import common_timezones
 from ifcclient.utils import recieve, unpack, rad_to_ang, mps_to_kph, mps_to_fpm, pack
 
 logger = logging.getLogger()
@@ -83,7 +86,7 @@ class IFCClient(object):
         self.conn.sendall(request)
 
         if await_response:
-            response_length = self.conn.recv(4)[:2]
+            response_length = recieve(self.conn, 4)[:2]
             response_length = struct.unpack('<H', response_length)[0]
             
             # keep recv till reach the response_length
@@ -122,6 +125,16 @@ class IFCClient(object):
             self.manifest[id_name] = {}
             self.manifest[id_name]['id'] = int(id)
             self.manifest[id_name]['data_type'] = int(data_type)
+    
+    def get_listcommands(self):
+        response = self.send_command('listcommands', params=[], await_response=True)
+        parsed = json.loads(response)
+        self.commandlist = {}
+        entries = parsed['Text'].strip().split('\n')
+        for item in entries[1:]:
+            command, descrition = item.split(':')
+            self.commandlist[command] = descrition.strip()
+    
     
     def fill_manifest(self):
         for name in self.manifest.keys():
@@ -232,6 +245,21 @@ class IFCClient(object):
             flightplan = self.send_command("flightplan.get", [], await_response=True)
         return json.loads(flightplan)
 
+    def dsiplay_command(self):
+        if self.version == 1:
+            print('{:<40}: {:<40}'.format('Command', 'Description'))
+            for key in self.commandlist.keys():
+                print('{:<40}: {:<40}'.format(key, self.commandlist[key]))
+        else:
+            print('{:<68}{:<8}{:<4}'.format('Command', 'ID', 'DataType'))
+            for key in self.manifest.keys():
+                id = self.manifest[key]['id']
+                if id < 10000:
+                    data_type = self.manifest[key]['data_type']
+                else:
+                    data_type = ''
+                print('{:<68}{:<8}{:<4}'.format(key, id, data_type))
+
 
 
 if __name__ == '__main__':
@@ -250,6 +278,7 @@ if __name__ == '__main__':
     ifc.run_command_by_name('commands/NextCamera')
 
     print(ifc.get_filghtplan())
+    ifc.dsiplay_command()
 
     ifc.close()
 
@@ -259,5 +288,8 @@ if __name__ == '__main__':
     print(ifc.get_aircraft_state())
 
     print(ifc.get_filghtplan())
+
+    ifc.get_listcommands()
+    ifc.dsiplay_command()
 
     ifc.close()
