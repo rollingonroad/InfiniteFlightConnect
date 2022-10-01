@@ -61,6 +61,14 @@ ifc.send_command("airplane.getstate", [], await_response=True)
 ifc.send_command("flightplan.get", [], await_response=True)
 ```
 
+### functions share with v1/v2
+
+#### get_aircraft_state()
+
+#### get_flightplan()
+
+#### display_command()
+
 ## Future updates
 
 - [ ] 
