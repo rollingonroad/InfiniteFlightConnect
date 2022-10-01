@@ -15,7 +15,7 @@ Before getting started, make sure to enable the Infinite Flight Coneect in the a
 First, import the module in Python and discover devcies in the same network, you can use duration to specific the time to discover, you can use duration=0 to return the first device you discovered.
 ```py
 import ifcclient
-devices = IFCClient.discover_devices(duration=0)
+devices = ifcclient.IFCClient.discover_devices(duration=0)
 ```
 
 ### API V2
