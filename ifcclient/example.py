@@ -1,12 +1,14 @@
-import ifcclient
 import logging
 import time
+
+from InfiniteFlightConnect import IFCClient
 
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
 
 if __name__ == '__main__':
-    ifc = ifcclient.IFCClient()
+    ip_list = IFCClient.discover_devices(duration=15)
+    ifc = IFCClient(ip_list[0])
 
     print(ifc.get_aircraft_state())
 

@@ -1,3 +1,4 @@
+from os import stat
 import time
 import struct
 import socket
@@ -17,27 +18,59 @@ logger.setLevel(logging.WARN)
 #logger.setLevel(logging.DEBUG)
 
 class IFCClient(object):
-    def __init__(self) -> None:
-        udp = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        udp.bind(("", 15000))
-        while True:
-            (data, addr) = udp.recvfrom(4096)
-            if data:
-                logger.info('Got broadcast udp packet, from: {}'.format(addr[0]))
-                logger.debug('Content:\n{}'.format(json.dumps(json.loads(data.decode('utf-8')), indent=4)))
-                break
-        udp.close()
+    def __init__(self, ip, version=2) -> None:
+        self.device_ip = ip
+        if version == 1:
+            self.version = 1
+        else:
+            self.version = 2
 
-        self.device_ip = addr[0]
-        self.device_port = 10112
+        if version == 1:
+            self.device_port = 10111
+        else:
+            self.device_port = 10112
         self.device_addr = (self.device_ip, self.device_port)
 
         self.conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.conn.connect(self.device_addr)
+        
+        # if v2, we need build the manifest, to get the id, DataType, command dict
+        if version == 2:
+            self.get_manifest()
+    
+    @staticmethod
+    def discover_devices(duration=30):
+        """discover devices in the same network
+        """
+        devices = []
+        udp = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        udp.bind(("", 15000))
 
-        self.get_manifest()
+        old_timeout = udp.gettimeout()
+        if duration == 0:
+            deadline = time.time() + 120
+        else:
+            deadline = time.time() + duration
+        while time.time() < deadline:
+            udp.settimeout(deadline - time.time())
+            try:
+                (data, addr) = udp.recvfrom(4096)
+                if data:
+                    logger.info('Got broadcast udp packet, from: {}'.format(addr[0]))
+                    logger.debug('Content:\n{}'.format(json.dumps(json.loads(data.decode('utf-8')), indent=4)))
+                    device_ip = addr[0]
+                    if device_ip not in devices:
+                        devices.append(device_ip)
+                    if duration == 0:
+                        return devices
+            except socket.timeout:
+                pass
 
-        # close the client
+        udp.settimeout(old_timeout)
+        udp.close()
+
+        return devices
+        
     def close(self):
         self.conn.close()
 
@@ -62,8 +95,6 @@ class IFCClient(object):
             response = response.decode("utf-8")
 
             return response
-        else:
-            print(f"{self.device_addr} [REQUEST SENT SUCCESSFULLY to {self.device_ip} : {self.device_port}] Request sent to Infinite Flight successfully")
         return None
     
     def get_manifest(self):
@@ -174,31 +205,40 @@ class IFCClient(object):
 
 
     def get_aircraft_state(self):
-        state = {}
-        
-        state['Name'] = self.get_state_by_name('aircraft/0/name')
-        state['AltitudeAGL'] = self.get_state_by_name('aircraft/0/altitude_agl')
-        state['AltitudeMSL'] = self.get_state_by_name('aircraft/0/altitude_msl')
-        state['GroundSpeed'] = self.get_state_by_name('aircraft/0/groundspeed')
-        state['GroundSpeedKts'] = mps_to_kph(state['GroundSpeed'])
-        state['HeadingMagnetic'] = rad_to_ang(self.get_state_by_name('aircraft/0/heading_magnetic'))
-        state['HeadingTrue'] = rad_to_ang(self.get_state_by_name('aircraft/0/heading_true'))
-        state['VerticalSpeed'] = mps_to_fpm(self.get_state_by_name('aircraft/0/vertical_speed'))
-        state['Location'] = {}
-        state['Location']['Altitude'] = self.get_state_by_name('aircraft/0/altitude_msl')
-        state['Location']['Latitude'] = self.get_state_by_name('aircraft/0/latitude')
-        state['Location']['Longitude'] = self.get_state_by_name('aircraft/0/longitude')
-
+        if self.version == 2:
+            state = {}
+            state['Name'] = self.get_state_by_name('aircraft/0/name')
+            state['AltitudeAGL'] = self.get_state_by_name('aircraft/0/altitude_agl')
+            state['AltitudeMSL'] = self.get_state_by_name('aircraft/0/altitude_msl')
+            state['GroundSpeed'] = self.get_state_by_name('aircraft/0/groundspeed')
+            state['GroundSpeedKts'] = mps_to_kph(state['GroundSpeed'])
+            state['HeadingMagnetic'] = rad_to_ang(self.get_state_by_name('aircraft/0/heading_magnetic'))
+            state['HeadingTrue'] = rad_to_ang(self.get_state_by_name('aircraft/0/heading_true'))
+            state['VerticalSpeed'] = mps_to_fpm(self.get_state_by_name('aircraft/0/vertical_speed'))
+            state['Location'] = {}
+            state['Location']['Altitude'] = self.get_state_by_name('aircraft/0/altitude_msl')
+            state['Location']['Latitude'] = self.get_state_by_name('aircraft/0/latitude')
+            state['Location']['Longitude'] = self.get_state_by_name('aircraft/0/longitude')
+        if self.version == 1:
+            state = self.send_command("airplane.getstate", [], await_response=True)
+            state = json.loads(state)
         return state
 
     def get_filghtplan(self):
-        name = 'aircraft/0/flightplan/full_info'
-        flightplan = self.get_state_by_name(name)
+        if self.version == 2:
+            name = 'aircraft/0/flightplan/full_info'
+            flightplan = self.get_state_by_name(name)
+        if self.version == 1:
+            flightplan = self.send_command("flightplan.get", [], await_response=True)
         return json.loads(flightplan)
 
 
+
 if __name__ == '__main__':
-    ifc = IFCClient()
+    # test version 2
+    ips = IFCClient.discover_devices(duration=0)
+    print(ips)
+    ifc = IFCClient(ips[0], version=2)
 
     print(ifc.get_aircraft_state())
 
@@ -208,6 +248,15 @@ if __name__ == '__main__':
     print(ifc.get_state_by_name('aircraft/0/systems/flaps/state'))
 
     ifc.run_command_by_name('commands/NextCamera')
+
+    print(ifc.get_filghtplan())
+
+    ifc.close()
+
+    # test version 1
+    ifc = IFCClient(ips[0], version=1)
+
+    print(ifc.get_aircraft_state())
 
     print(ifc.get_filghtplan())
 
