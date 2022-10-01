@@ -6,7 +6,7 @@ with open('README.md', 'r') as fh:
 
 setuptools.setup(
     name="ifcclient",
-    version="0.0.3",
+    version="0.0.4",
     author="David Wu",
     author_email="toffino@aliyun.com",
     description="Using python to connect the Infinite Flight Connect API v2.",
