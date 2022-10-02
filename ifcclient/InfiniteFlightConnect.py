@@ -122,6 +122,9 @@ class IFCClient(object):
         return None
     
     def get_manifest(self):
+        """Build the manifest dict only in V2.
+            Create the get manifest request, recieve response and parse to dictionary in V2. 
+        """
         if self.version != 2:
             raise AttributeError('Only work on version 2.')
         request = struct.pack('<lx', -1)
@@ -150,6 +153,9 @@ class IFCClient(object):
             self.manifest[id_name]['data_type'] = int(data_type)
     
     def get_listcommands(self):
+        """Built command list dict for V1.
+            Send command 'listcommnds' and recieve the response and parse to a dict in V1.
+        """
         if self.version != 1:
             raise AttributeError('Only work on version 1.')
         response = self.send_command('listcommands', params=[], await_response=True)
@@ -208,8 +214,8 @@ class IFCClient(object):
 
     def get_state_by_name(self, name):
         """Implement API V2 GetState
-            Send a command and get the response from Infinite Flight Connect API V2.
-            :param name: the command name.
+            Send a get state reqeust and get the value from Infinite Flight Connect API V2.
+            :param name: the state name.
             :return: the value of the command name. it will be: bool, int, str, float
             :rtype: bool, int, str, float
         """
@@ -232,6 +238,11 @@ class IFCClient(object):
         self.conn.sendall(request)
         
     def set_state_by_name(self, name, value):
+        """Implement API V2 SetState
+            Send a set state request to assign new value to them.
+            :param name: the state name.
+            :param value: the value you want to set.
+        """
         if self.version != 2:
             raise AttributeError('Only work on version 2.')
         if name in self.manifest.keys():
@@ -251,6 +262,10 @@ class IFCClient(object):
         self.conn.sendall(request)
     
     def run_command_by_name(self, command):
+        """To execute a command throught the API V2.
+            Send a RunCommand request and execute the command in the device.
+            :param command: the command to execute.
+        """
         if self.version != 2:
             raise AttributeError('Only work on version 2.')
         if command in self.manifest.keys():
