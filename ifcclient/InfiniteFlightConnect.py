@@ -1,13 +1,11 @@
-from os import stat
-from pydoc import describe
+
 import time
 import struct
 import socket
 import json
 import logging
 
-from pytz import common_timezones
-from ifcclient.utils import recieve, unpack, rad_to_ang, mps_to_kph, mps_to_fpm, pack
+from .utils import recieve, unpack, rad_to_ang, mps_to_kph, mps_to_fpm, pack
 
 logger = logging.getLogger()
 ch = logging.StreamHandler()
@@ -21,7 +19,14 @@ logger.setLevel(logging.WARN)
 #logger.setLevel(logging.DEBUG)
 
 class IFCClient(object):
-    def __init__(self, ip, version=2) -> None:
+    """Infinite Flight Connect API client class
+        Used to prepare the socket connection to Infinite Flight device, and init the
+            commandlist(version 1) or manifest(version 2)
+        :param ip: Infinite Flight device ip
+        :param version: 1 or 2, which version you want to use to connect the Infinite Flight Connect API.
+            2 is by default.
+    """
+    def __init__(self, ip, version=2):
         self.device_ip = ip
         if version == 1:
             self.version = 1
@@ -40,10 +45,18 @@ class IFCClient(object):
         # if v2, we need build the manifest, to get the id, DataType, command dict
         if version == 2:
             self.get_manifest()
+        if version == 1:
+            self.get_listcommands()
     
     @staticmethod
     def discover_devices(duration=30):
         """discover devices in the same network
+            a static method, to discover devices ip which running Infinite Flight Simulator in the same network
+            in specific duration.
+        :param duration: how many seconds we listen for udp broadcast packet. default 30 seconds. if duration=0, 
+            return when we receive frist udp broadcast packet.
+        :return: An ip list
+        :rtype: list
         """
         devices = []
         udp = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -75,10 +88,21 @@ class IFCClient(object):
         return devices
         
     def close(self):
+        """Close the socket
+        """
         self.conn.close()
 
 
     def send_command(self, cmd, params, await_response=False):
+        """Send command to API v1, and recieve response.
+            Send command to Infinite Flight Connect API version 1
+            :param cmd: command to send
+            :param params: list of parameter to send
+            :await_response: by default False, return immediatly after send the command, if set True,
+                receive response.
+            :return: response string
+            :rtype: str
+        """
         if self.version != 1:
             raise AttributeError('Only work on version 1.')
         request = {"Command":cmd,"Parameters":params}
@@ -91,12 +115,7 @@ class IFCClient(object):
             response_length = recieve(self.conn, 4)[:2]
             response_length = struct.unpack('<H', response_length)[0]
             
-            # keep recv till reach the response_length
-            recved = 0
-            response = bytes()
-            while recved < response_length:
-                response += self.conn.recv(response_length - recved)
-                recved = len(response)
+            response = recieve(self.conn, response_length)
             response = response.decode("utf-8")
 
             return response
@@ -188,6 +207,12 @@ class IFCClient(object):
 
 
     def get_state_by_name(self, name):
+        """Implement API V2 GetState
+            Send a command and get the response from Infinite Flight Connect API V2.
+            :param name: the command name.
+            :return: the value of the command name. it will be: bool, int, str, float
+            :rtype: bool, int, str, float
+        """
         if self.version != 2:
             raise AttributeError('Only work on version 2.')
         if name in self.manifest.keys():
