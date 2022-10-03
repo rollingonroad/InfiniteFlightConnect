@@ -280,6 +280,12 @@ class IFCClient(object):
 
 
     def get_aircraft_state(self):
+        """Get the aircraft state by same function in both V1/V2
+            In V1, there is a simple command: airplane.getsate to get the
+            aircraft state, in V2, need use many GetState queries and convert
+            to right unit, for example, headingTrue need convert radian to
+            angle.
+        """
         if self.version == 2:
             state = {}
             state['Name'] = self.get_state_by_name('aircraft/0/name')
@@ -300,6 +306,8 @@ class IFCClient(object):
         return state
 
     def get_filghtplan(self):
+        """Get flightplan
+        """
         if self.version == 2:
             name = 'aircraft/0/flightplan/full_info'
             flightplan = self.get_state_by_name(name)
@@ -308,6 +316,8 @@ class IFCClient(object):
         return json.loads(flightplan)
 
     def dsiplay_commands(self):
+        """List all avaliable command.
+        """
         if self.version == 1:
             print('{:<40}: {:<40}'.format('Command', 'Description'))
             for key in self.commandlist.keys():
