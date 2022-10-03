@@ -5,3 +5,6 @@ ifcclient.egg-info/
 ifcclient_pkg/detail.log
 .DS_Store
 .Makefile.swp
+report.xml
+.coverage
+coverage.xml
