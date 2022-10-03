@@ -67,6 +67,28 @@ def test_pack(value, data_type, payload):
     assert pack(value, data_type) == payload
 
 @pytest.mark.parametrize(
+    "value, data_type",
+    (
+        (True, 3),
+        (False, 4),
+        (5, 2),
+        (10, 4),
+        (3.14, 1),
+        (10.8, 4),
+        (3.14, 5),
+        (10.8, 5),
+        ("This is a string", 1),
+        ("", 3),
+        (5, 3),
+        (10, 2),
+    ),
+)
+
+def test_pack_exception(value, data_type):
+    with pytest.raises(TypeError):
+        pack(value, data_type)
+
+@pytest.mark.parametrize(
     "value, data_type, payload",
     (
         (True, 0, b'\x01'),
