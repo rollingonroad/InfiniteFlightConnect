@@ -21,7 +21,7 @@ devices = ifcclient.IFCClient.discover_devices(duration=0)
 ### API V2
 Init the client object.
 ```py
-ifc = ifcclient.IFClient(devices[0], version=2) # version is 2 by default
+ifc = ifcclient.IFClient.connect(devices[0], version=2) # version is 2 by default
 ```
 There are three ways to use the Infinite Flight Connected API V2, GetState, SetState, RunCommand. You can check Infinite Flight website for the detail of API.
 
@@ -54,7 +54,7 @@ ifc.run_command_by_name('commands/NextCamera')
 ### API V1
 Init the client object for V1.
 ```py
-ifc = ifcclient.IFClient(devices[0], version=1)
+ifc = ifcclient.IFClient.connect(devices[0], version=1)
 ```
 With V1, to send a command, use the `send_command` function. The first parameter is the command, the second parameter are the parameters passed to Infinite Flight while the third parameter determines whether to wait for a response or not. Await response is false by default although it must be enabled when expecting a response.
 ```py
