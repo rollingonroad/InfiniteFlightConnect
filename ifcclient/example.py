@@ -21,8 +21,8 @@ if __name__ == '__main__':
 
     ifc.run_command_by_name('commands/NextCamera')
 
-    print(ifc.get_filghtplan())
-    ifc.dsiplay_commands()
+    print(ifc.get_flightplan())
+    ifc.display_commands()
 
     ifc.close()
 
@@ -31,9 +31,9 @@ if __name__ == '__main__':
 
     print(ifc.get_aircraft_state())
 
-    print(ifc.get_filghtplan())
+    print(ifc.get_flightplan())
 
     ifc.get_listcommands()
-    ifc.dsiplay_commands()
+    ifc.display_commands()
 
     ifc.close()
