@@ -1,5 +1,5 @@
 test:
-	pytest tests --import-mode=prepend --junitxml=report.xml
+	pytest tests --capture=fd --junitxml=report.xml
 coverage:
 	pytest --cov-config .coveragerc --verbose --cov-report term --cov-report xml --cov=ifcclient tests
 publish:
