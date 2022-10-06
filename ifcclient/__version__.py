@@ -1,7 +1,7 @@
 __title__ = "ifcclient"
 __description__ = "Python client for Infinite Flight Connect API v1/2"
 __url__ = "https://github.com/rollingonroad/InfiniteFlightConnect"
-__version__ = "0.0.5"
+__version__ = "0.0.5.1"
 #__build__ = 0x022801
 __author__ = "David Wu"
 __author_email__ = "toffino@aliyun.com"
