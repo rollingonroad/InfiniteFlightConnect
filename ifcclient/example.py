@@ -10,7 +10,7 @@ if __name__ == '__main__':
     # test version 2
     ips = ifcclient.IFCClient.discover_devices(duration=0)
     print(ips)
-    ifc = ifcclient.IFCClient(ips[0], version=2)
+    ifc = ifcclient.IFCClient.connect(ips[0], version=2)
 
     print(ifc.get_aircraft_state())
 
@@ -27,7 +27,7 @@ if __name__ == '__main__':
     ifc.close()
 
     # test version 1
-    ifc = ifcclient.IFCClient(ips[0], version=1)
+    ifc = ifcclient.IFCClient.connect(ips[0], version=1)
 
     print(ifc.get_aircraft_state())
 
