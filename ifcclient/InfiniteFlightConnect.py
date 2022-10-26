@@ -201,7 +201,7 @@ class APIClientV2(APIClient):
         item = self.conn.recv(4)
         length = self.conn.recv(4)
         length = struct.unpack('<l', length)[0]
-        logger.info('item: %s, length: %d', item, length)
+        logger.debug('item: %s, length: %d', item, length)
         
         recvd = 0
         response = bytes()
@@ -244,7 +244,7 @@ class APIClientV2(APIClient):
             :return: the value of the command name. it will be: bool, int, str, float
             :rtype: bool, int, str, float
         """
-        if name in self.manifest.keys():
+        if name in self.manifest:
             return self.get_state(self.manifest[name]['id'], self.manifest[name]['data_type'])
         else:
             raise AttributeError("State name can't be found in manifest.")
@@ -264,7 +264,7 @@ class APIClientV2(APIClient):
             :param name: the state name.
             :param value: the value you want to set.
         """
-        if name in self.manifest.keys():
+        if name in self.manifest:
             state_id = self.manifest[name]['id']
             data_type = self.manifest[name]['data_type']
             logger.debug('id: %d, data_type: %d, value: %s', state_id, data_type, value)
@@ -272,9 +272,9 @@ class APIClientV2(APIClient):
         else:
             raise AttributeError("State name can't be found in manifest.")
 
-    def run_command(self, id):
+    def run_command(self, command_id):
         request = bytes()
-        request = pack(id, 1) + pack(False, 0)
+        request = pack(command_id, 1) + pack(False, 0)
         logger.debug('request: %s', request)
         self.conn.sendall(request)
     
@@ -283,7 +283,7 @@ class APIClientV2(APIClient):
             Send a RunCommand request and execute the command in the device.
             :param command: the command to execute.
         """
-        if command in self.manifest.keys():
+        if command in self.manifest:
             command_id = self.manifest[command]['id']
             data_type = self.manifest[command]['data_type']
             if data_type != -1:

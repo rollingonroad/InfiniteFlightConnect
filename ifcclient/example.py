@@ -2,7 +2,6 @@ import logging
 import time
 import ifcclient
 
-
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
 
