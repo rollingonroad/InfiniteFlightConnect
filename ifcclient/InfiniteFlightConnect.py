@@ -304,8 +304,10 @@ class APIClientV2(APIClient):
         state['Name'] = self.get_state_by_name('aircraft/0/name')
         state['AltitudeAGL'] = self.get_state_by_name('aircraft/0/altitude_agl')
         state['AltitudeMSL'] = self.get_state_by_name('aircraft/0/altitude_msl')
-        state['GroundSpeed'] = self.get_state_by_name('aircraft/0/groundspeed')
-        state['GroundSpeedKts'] = mps_to_kph(state['GroundSpeed'])
+
+        state['IndicatedAirspeedKts'] = mps_to_kph(self.get_state_by_name('aircraft/0/indicated_airspeed'))
+        state['GroundSpeedKts'] = mps_to_kph(self.get_state_by_name('aircraft/0/groundspeed'))
+
         state['HeadingMagnetic'] = rad_to_ang(self.get_state_by_name('aircraft/0/heading_magnetic'))
         state['HeadingTrue'] = rad_to_ang(self.get_state_by_name('aircraft/0/heading_true'))
         state['VerticalSpeed'] = mps_to_fpm(self.get_state_by_name('aircraft/0/vertical_speed'))
