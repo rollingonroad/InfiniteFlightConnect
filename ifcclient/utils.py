@@ -1,7 +1,7 @@
 import struct
 import math
+import socket
 
-from pkg_resources import to_filename
 # convert byte array to specific DataType, raise exception if payload length mismatch with DataType
 def unpack(payload, data_type):
     payload_length = len(payload)
@@ -40,12 +40,20 @@ def pack(value, data_type):
         raise TypeError('value is not match with data type')
 
 # recieve specific size from the socket
-def recieve(conn, size):
+def recieve(conn, size, timeout=15):
+    old_tcp_timeout = conn.gettimeout()
+    conn.settimeout(timeout)
     recved = 0
     buf = bytes()
-    while recved < size:
-        buf += conn.recv(size - recved)
-        recved = len(buf)
+    try:
+        while recved < size:
+            buf += conn.recv(size - recved)
+            # if recv return None, means connection has been closed in server side.
+            if len(buf) == recved:
+                raise socket.error
+            recved = len(buf)
+    finally:
+        conn.settimeout(old_tcp_timeout)
     return buf
 
 # convert rad to ang

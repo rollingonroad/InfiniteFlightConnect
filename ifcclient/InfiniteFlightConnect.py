@@ -41,8 +41,8 @@ class IFCClient(object):
             try:
                 (data, addr) = udp.recvfrom(4096)
                 if data:
-                    logger.info('Got broadcast udp packet, from: {}'.format(addr[0]))
-                    logger.debug('Content:\n{}'.format(json.dumps(json.loads(data.decode('utf-8')), indent=4)))
+                    logger.info('Got broadcast udp packet, from: %s', addr[0])
+                    logger.debug('Content:\n %s',json.dumps(json.loads(data.decode('utf-8')), indent=4))
                     device_ip = addr[0]
                     if device_ip not in devices:
                         devices.append(device_ip)
@@ -58,7 +58,7 @@ class IFCClient(object):
 
     @staticmethod
     def connect(ip, version=2):
-        """
+        """Connect to device
         """
         if version == 1:
             return APIClientV1(ip)
@@ -73,20 +73,28 @@ class APIClient(metaclass=ABCMeta):
 
     @abstractmethod
     def get_aircraft_state(self):
-        raise NotImplemented
+        """get aircraft state
+        """
+        raise NotImplementedError
 
     @abstractmethod
     def get_flightplan(self):
-        raise NotImplemented
+        """get flight plan
+        """
+        raise NotImplementedError
 
     @abstractmethod
     def display_commands(self):
-        raise NotImplemented
+        """list all avaliable command
+        """
+        raise NotImplementedError
 
     def close(self):
         self.conn.close()
 
 class APIClientV1(APIClient):
+    """Api client version 1
+    """
     def __init__(self, ip):
         """Used to prepare the socket connection to Infinite Flight device, and init the
             commandlist.
@@ -161,16 +169,19 @@ class APIClientV1(APIClient):
         """List all avaliable command.
         """
         if self.version == 1:
-            print('{:<40}: {:<40}'.format('Command', 'Description'))
-            for key in self.commandlist.keys():
-                print('{:<40}: {:<40}'.format(key, self.commandlist[key]))
+            print(f"{'Command':<40}: {'Description':<40}")
+            for command, description in self.commandlist.items():
+                print(f'{command:<40}: {description:<40}')
 
 class APIClientV2(APIClient):
+    """Api client version 2
+    """
     def __init__(self, ip):
         """Used to prepare the socket connection to Infinite Flight device, and init the
             manifest.
         :param ip: Infinite Flight device ip
         """
+        super().__init__()
         self.version = 2
         self.device_ip = ip
         self.device_port = 10112
@@ -190,7 +201,7 @@ class APIClientV2(APIClient):
         item = self.conn.recv(4)
         length = self.conn.recv(4)
         length = struct.unpack('<l', length)[0]
-        logger.info('item: {}, length: {}'.format(item, length))
+        logger.debug('item: %s, length: %d', item, length)
         
         recvd = 0
         response = bytes()
@@ -199,29 +210,29 @@ class APIClientV2(APIClient):
             recvd = len(response)
 
         response = response[4:].decode('utf-8').strip()
-        logger.debug('{}'.format(response))
+        logger.debug('%s', response)
         
         entries = response.split('\n')
         self.manifest = {}
         for line in entries:
-            (id, data_type, id_name) = line.split(',')
+            (state_id, data_type, id_name) = line.split(',')
             self.manifest[id_name] = {}
-            self.manifest[id_name]['id'] = int(id)
+            self.manifest[id_name]['id'] = int(state_id)
             self.manifest[id_name]['data_type'] = int(data_type)
     
-    def get_state(self, id, data_type):
-        request = struct.pack('<lx', id)
+    def get_state(self, state_id, data_type):
+        request = struct.pack('<lx', state_id)
         self.conn.sendall(request)
 
         response = recieve(self.conn, 4)
         return_id = unpack(response, data_type=1)
         response = recieve(self.conn, 4)
         return_length = unpack(response, data_type=1)
-        logger.debug('return: id: {}, length: {}'.format(return_id, return_length))
+        logger.debug('return: id: %d, length: %d', return_id, return_length)
 
         pay_load = recieve(self.conn, return_length)
         value = unpack(pay_load, data_type)
-        logger.debug('{}'.format(value))
+        logger.debug('payload: %s', value)
 
         return value
 
@@ -233,18 +244,18 @@ class APIClientV2(APIClient):
             :return: the value of the command name. it will be: bool, int, str, float
             :rtype: bool, int, str, float
         """
-        if name in self.manifest.keys():
+        if name in self.manifest:
             return self.get_state(self.manifest[name]['id'], self.manifest[name]['data_type'])
         else:
             raise AttributeError("State name can't be found in manifest.")
 
-    def set_state(self, id, data_type, value):
+    def set_state(self, state_id, data_type, value):
         request = bytes()
         if data_type in [0, 1, 2, 3, 4, 5]:
-            request = pack(id, 1) + pack(True, 0) + pack(value, data_type)
+            request = pack(state_id, 1) + pack(True, 0) + pack(value, data_type)
         else:
             pass
-        logger.debug('request: {}'.format(request))
+        logger.debug('request: %s', request)
         self.conn.sendall(request)
         
     def set_state_by_name(self, name, value):
@@ -253,18 +264,18 @@ class APIClientV2(APIClient):
             :param name: the state name.
             :param value: the value you want to set.
         """
-        if name in self.manifest.keys():
-            id = self.manifest[name]['id']
+        if name in self.manifest:
+            state_id = self.manifest[name]['id']
             data_type = self.manifest[name]['data_type']
-            logger.debug('id: {}, data_type: {}, value: {}'.format(id, data_type, value))
-            return self.set_state(id, data_type, value)
+            logger.debug('id: %d, data_type: %d, value: %s', state_id, data_type, value)
+            return self.set_state(state_id, data_type, value)
         else:
             raise AttributeError("State name can't be found in manifest.")
 
-    def run_command(self, id):
+    def run_command(self, command_id):
         request = bytes()
-        request = pack(id, 1) + pack(False, 0)
-        logger.debug('request: {}'.format(request))
+        request = pack(command_id, 1) + pack(False, 0)
+        logger.debug('request: %s', request)
         self.conn.sendall(request)
     
     def run_command_by_name(self, command):
@@ -272,13 +283,13 @@ class APIClientV2(APIClient):
             Send a RunCommand request and execute the command in the device.
             :param command: the command to execute.
         """
-        if command in self.manifest.keys():
-            id = self.manifest[command]['id']
+        if command in self.manifest:
+            command_id = self.manifest[command]['id']
             data_type = self.manifest[command]['data_type']
             if data_type != -1:
                 return "It's state, you should use set_state_by_name() and provide a value."
-            logger.debug('id: {}, data_type: {}'.format(id, data_type))
-            return self.run_command(id)
+            logger.debug('id: %d, data_type: %d', command_id, data_type)
+            return self.run_command(command_id)
         else:
             raise AttributeError("command can't be found in manifest.")
 
@@ -293,8 +304,10 @@ class APIClientV2(APIClient):
         state['Name'] = self.get_state_by_name('aircraft/0/name')
         state['AltitudeAGL'] = self.get_state_by_name('aircraft/0/altitude_agl')
         state['AltitudeMSL'] = self.get_state_by_name('aircraft/0/altitude_msl')
-        state['GroundSpeed'] = self.get_state_by_name('aircraft/0/groundspeed')
-        state['GroundSpeedKts'] = mps_to_kph(state['GroundSpeed'])
+
+        state['IndicatedAirspeedKts'] = mps_to_kph(self.get_state_by_name('aircraft/0/indicated_airspeed'))
+        state['GroundSpeedKts'] = mps_to_kph(self.get_state_by_name('aircraft/0/groundspeed'))
+
         state['HeadingMagnetic'] = rad_to_ang(self.get_state_by_name('aircraft/0/heading_magnetic'))
         state['HeadingTrue'] = rad_to_ang(self.get_state_by_name('aircraft/0/heading_true'))
         state['VerticalSpeed'] = mps_to_fpm(self.get_state_by_name('aircraft/0/vertical_speed'))
@@ -314,35 +327,31 @@ class APIClientV2(APIClient):
     def display_commands(self):
         """List all avaliable command.
         """
-        print('{:<68}{:<8}{:<4}'.format('Command', 'ID', 'DataType'))
-        for key in self.manifest.keys():
-            id = self.manifest[key]['id']
-            if id < 10000:
-                data_type = self.manifest[key]['data_type']
+        print(f"{'Command':<68}{'ID':<8}{'DataType':<4}")
+        for command, detail in self.manifest.items():
+            command_id = detail['id']
+            if command_id < 10000:
+                data_type = detail['data_type']
             else:
                 data_type = ''
-            print('{:<68}{:<8}{:<4}'.format(key, id, data_type))    
+            print(f'{command:<68}{command_id:<8}{data_type:<4}')
 
     def fill_manifest(self):
-        if self.version != 2:
-            raise AttributeError('Only work on version 2.')
-        for name in self.manifest.keys():
-            if self.manifest[name]['data_type'] != -1:
-                id = self.manifest[name]['id']
-                data_type = self.manifest[name]['data_type']
-                value = self.get_state(id, data_type)
-                self.manifest[name]['value'] = value
-                self.manifest[name]['last_update'] = time.time()
+        for  command, detail in self.manifest.items():
+            if detail['data_type'] != -1:
+                command_id = detail['id']
+                data_type = detail['data_type']
+                value = self.get_state(command_id, data_type)
+                detail['value'] = value
+                detail['last_update'] = time.time()
 
     def dump_manifest(self):
-        if self.version != 2:
-            raise AttributeError('Only work on version 2.')
-        for name in self.manifest.keys():
-            id = self.manifest[name]['id']
-            data_type = self.manifest[name]['data_type']
-            if 'value' in self.manifest[name].keys() and id < 10000:
-                value = self.manifest[name]['value']
-                last_update = time.ctime(self.manifest[name]['last_update'])
-                print('{:<8}{:<3}{:<25}{}'.format(id, data_type, value, name))
+        for command, detail in self.manifest.items():
+            command_id = detail['id']
+            data_type = detail['data_type']
+            if 'value' in detail.keys() and command_id < 10000:
+                value = detail['value']
+                last_update = time.ctime(detail['last_update'])
+                print(f'{command_id:<8}{data_type:<3}{value:<25}{command}')
             else:
-                print('{:<8}{:<3}{:<55}'.format(id, data_type, name))
+                print(f'{command_id:<8}{data_type:<3}{command:<55}')
